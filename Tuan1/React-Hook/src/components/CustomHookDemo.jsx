@@ -1,9 +1,6 @@
 import React from "react";
 import useWindowWidth from "../hooks/useWindowWidth";
 
-/*
-  - Custom hook useWindowWidth dùng useState + useEffect để lắng nghe resize
-*/
 export default function CustomHookDemo() {
   const width = useWindowWidth();
 

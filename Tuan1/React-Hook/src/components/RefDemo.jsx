@@ -1,16 +1,12 @@
 import React, { useRef, useState, useEffect } from "react";
 
-/*
-  - ref tới input DOM để focus.
-  - dùng ref để lưu giá trị trước đó.
-*/
 export default function RefDemo() {
   const inputRef = useRef(null);
   const prevValRef = useRef("");
   const [value, setValue] = useState("");
 
   useEffect(() => {
-    prevValRef.current = value; // cập nhật prev sau mỗi render
+    prevValRef.current = value; 
   }, [value]);
 
   return (

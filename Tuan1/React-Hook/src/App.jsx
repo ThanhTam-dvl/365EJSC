@@ -58,7 +58,7 @@ export default function App() {
             </button>
           ))}
           <hr />
-          <small className="note">Mỗi demo minh hoạ 1 hook & comment giải thích.</small>
+          <small className="note">Mỗi demo minh hoạ 1 hook và comment giải thích.</small>
         </nav>
 
         <main className="main">
