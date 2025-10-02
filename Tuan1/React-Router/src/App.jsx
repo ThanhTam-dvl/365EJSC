@@ -18,7 +18,7 @@ function App() {
   return (
     <div>
       <Navbar />
-      Hello bro, My name is Tam Zit
+      Hello everyone, My name is Thanh Tam
       <Routes>
         <Route path='/' element={<HomePage />} />
         <Route path='/about' element={<About />} >
@@ -32,7 +32,8 @@ function App() {
           path="/dashboard"
           element={
             <ProtectedRoute isAuth={isAuth}>
-              <Dashboard onLogout={() => setIsAuth(false)} />            </ProtectedRoute>
+              <Dashboard onLogout={() => setIsAuth(false)} />            
+            </ProtectedRoute>
           }
         >
           <Route path="stats" element={<Stats/>} />
