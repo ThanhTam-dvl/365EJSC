@@ -10,6 +10,11 @@ export default function MessageCard({ msg, refresh }) {
   const [editReplyText, setEditReplyText] = useState("");
   const [showAllReplies, setShowAllReplies] = useState(false);
 
+  // Hiển thị replies
+    const displayedReplies = showAllReplies 
+      ? msg.replies 
+      : (msg.replies || []).slice(0, 2);
+      
   // Format time
   const formatTime = (timeString) => {
     return new Date(timeString).toLocaleTimeString('vi-VN', {
@@ -18,10 +23,7 @@ export default function MessageCard({ msg, refresh }) {
     });
   };
 
-  // Hiển thị replies
-  const displayedReplies = showAllReplies 
-    ? msg.replies 
-    : (msg.replies || []).slice(0, 2);
+  
 
   // Message actions
   const handleEdit = async () => {
