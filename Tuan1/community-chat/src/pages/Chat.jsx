@@ -65,7 +65,7 @@ export default function Chat() {
         </div>
       </div>
 
-      {/* Input Area - Fixed at bottom */}
+      
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-blue-200 p-4 shadow-lg">
         <div className="max-w-2xl mx-auto flex gap-2">
           <input
