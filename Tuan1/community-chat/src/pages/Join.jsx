@@ -1,18 +1,18 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 
 export default function Join() {
-  const [name, setName] = useState("");
+  const { 
+    register, 
+    handleSubmit, 
+    formState: { errors, isSubmitting } 
+  } = useForm();
+  
   const navigate = useNavigate();
 
-  const handleJoin = () => {
-    if (!name.trim()) return;
-    localStorage.setItem("username", name);
+  const onSubmit = (data) => {
+    localStorage.setItem("username", data.username);
     navigate("/chat");
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") handleJoin();
   };
 
   return (
@@ -23,21 +23,40 @@ export default function Join() {
           <p className="text-blue-600">Nhập tên hay biệt danh của bro để bắt đầu chat với mọi người.</p>
         </div>
         
-        <div className="space-y-4">
-          <input
-            className="w-full border border-blue-300 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
-            placeholder="Nhập tên bro..."
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyPress={handleKeyPress}
-          />
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <input
+              className="w-full border border-blue-300 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
+              placeholder="Nhập tên bro..."
+              {...register("username", {
+                required: "Tên là bắt buộc",
+                minLength: {
+                  value: 2,
+                  message: "Tên phải có ít nhất 2 ký tự"
+                },
+                maxLength: {
+                  value: 20,
+                  message: "Tên không được quá 20 ký tự"
+                },
+                pattern: {
+                  value: /^[a-zA-Z0-9_\u4e00-\u9fa5]+$/,
+                  message: "Tên chỉ được chứa chữ cái, số và dấu gạch dưới"
+                }
+              })}
+            />
+            {errors.username && (
+              <p className="text-red-500 text-sm mt-1">{errors.username.message}</p>
+            )}
+          </div>
+          
           <button
-            onClick={handleJoin}
+            type="submit"
+            disabled={isSubmitting}
             className="w-full bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white font-semibold py-4 px-6 rounded-xl transition-all transform hover:scale-105 active:scale-95 shadow-md"
           >
-            Tham gia Chat
+            {isSubmitting ? "Đang tham gia..." : "Tham gia Chat"}
           </button>
-        </div>
+        </form>
       </div>
     </div>
   );

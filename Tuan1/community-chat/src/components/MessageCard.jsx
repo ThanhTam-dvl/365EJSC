@@ -1,21 +1,47 @@
 import { useState } from "react";
 import { updateMessage, deleteMessage, createReply, deleteReply, updateReply } from "../services/api";
+import { useForm } from "react-hook-form";
 
 export default function MessageCard({ msg, refresh }) {
   const username = localStorage.getItem("username");
-  const [replyText, setReplyText] = useState("");
   const [editMode, setEditMode] = useState(false);
-  const [editText, setEditText] = useState(msg.message);
   const [editingReplyId, setEditingReplyId] = useState(null);
-  const [editReplyText, setEditReplyText] = useState("");
   const [showAllReplies, setShowAllReplies] = useState(false);
 
+  // Form cho message edit
+  const { 
+    register: registerMessage, 
+    handleSubmit: handleMessageSubmit, 
+    formState: { errors: messageErrors },
+    setValue: setMessageValue
+  } = useForm({
+    defaultValues: {
+      message: msg.message
+    }
+  });
+
+  // Form cho reply
+  const { 
+    register: registerReply, 
+    handleSubmit: handleReplySubmit, 
+    formState: { errors: replyErrors, isSubmitting: isReplying },
+    reset: resetReply
+  } = useForm();
+
+  // Form cho reply edit
+  const { 
+    register: registerReplyEdit, 
+    handleSubmit: handleReplyEditSubmit, 
+    formState: { errors: replyEditErrors },
+    setValue: setReplyEditValue,
+    reset: resetReplyEdit
+  } = useForm();
+
   // Hiển thị replies
-    const displayedReplies = showAllReplies 
-      ? msg.replies 
-      : (msg.replies || []).slice(0, 2);
-      
-  // Format time
+  const displayedReplies = showAllReplies 
+    ? msg.replies 
+    : (msg.replies || []).slice(0, 2);
+    
   const formatTime = (timeString) => {
     return new Date(timeString).toLocaleTimeString('vi-VN', {
       hour: '2-digit',
@@ -23,11 +49,8 @@ export default function MessageCard({ msg, refresh }) {
     });
   };
 
-  
-
-  // Message actions
-  const handleEdit = async () => {
-    await updateMessage(msg.id, { ...msg, message: editText });
+  const onMessageEdit = async (data) => {
+    await updateMessage(msg.id, { ...msg, message: data.message });
     setEditMode(false);
     refresh();
   };
@@ -39,11 +62,9 @@ export default function MessageCard({ msg, refresh }) {
     }
   };
 
-  // Reply actions
-  const handleReply = async () => {
-    if (!replyText.trim()) return;
-    await createReply(msg.id, { username, message: replyText });
-    setReplyText("");
+  const onReplySubmit = async (data) => {
+    await createReply(msg.id, { username, message: data.reply });
+    resetReply();
     refresh();
   };
 
@@ -54,17 +75,30 @@ export default function MessageCard({ msg, refresh }) {
     }
   };
 
-  const handleEditReply = async (replyId) => {
-    if (editingReplyId === replyId) {
-      await updateReply(msg.id, replyId, { message: editReplyText });
-      setEditingReplyId(null);
-      setEditReplyText("");
-      refresh();
-    } else {
-      const reply = msg.replies?.find(r => r.id === replyId);
-      setEditingReplyId(replyId);
-      setEditReplyText(reply?.message || "");
-    }
+  const onReplyEdit = async (data) => {
+    await updateReply(msg.id, editingReplyId, { message: data.replyEdit });
+    setEditingReplyId(null);
+    resetReplyEdit();
+    refresh();
+  };
+
+  const handleEditReply = (reply) => {
+    setEditingReplyId(reply.id);
+    setReplyEditValue("replyEdit", reply.message);
+  };
+
+  const cancelEdit = () => {
+    setEditingReplyId(null);
+    resetReplyEdit();
+  };
+
+  const startEditMessage = () => {
+    setEditMode(true);
+    setMessageValue("message", msg.message);
+  };
+
+  const cancelEditMessage = () => {
+    setEditMode(false);
   };
 
   return (
@@ -75,39 +109,60 @@ export default function MessageCard({ msg, refresh }) {
           <div className="flex items-center space-x-2">
             <strong className="text-blue-800">{msg.username}</strong>
             <span className="text-gray-500 text-sm ml-10">
-            {formatTime(msg.createdAt)}
-          </span>
+              {formatTime(msg.createdAt)}
+            </span>
           </div>
-          
         </div>
         
         {username === msg.username && (
           <div className="flex space-x-2">
-            <button onClick={() => setEditMode(!editMode)} className="text-blue-500 text-sm">
-              {editMode ? "Trở lại" : "Chỉnh sửa"}
-            </button>
-            <button onClick={handleDelete} className="text-red-400 text-sm">
-              Xóa
-            </button>
+            {editMode ? (
+              <button onClick={cancelEditMessage} className="text-gray-500 text-sm">
+                Trở lại
+              </button>
+            ) : (
+              <>
+                <button onClick={startEditMessage} className="text-blue-500 text-sm">
+                  Chỉnh sửa
+                </button>
+                <button onClick={handleDelete} className="text-red-400 text-sm">
+                  Xóa
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
 
       {/* Message Content */}
       {editMode ? (
-        <div className="space-y-2">
-          <textarea
-            className="w-full border border-blue-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
-            value={editText}
-            onChange={(e) => setEditText(e.target.value)}
-            rows="3"
-          />
-          <button onClick={handleEdit} className="bg-green-400 text-white py-2 px-4 rounded-xl">
+        <form onSubmit={handleMessageSubmit(onMessageEdit)} className="space-y-2">
+          <div>
+            <textarea
+              className="w-full border border-blue-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+              rows="3"
+              {...registerMessage("message", {
+                required: "Tin nhắn không được để trống",
+                minLength: {
+                  value: 1,
+                  message: "Tin nhắn phải có ít nhất 1 ký tự"
+                },
+                maxLength: {
+                  value: 1000,
+                  message: "Tin nhắn không được quá 1000 ký tự"
+                }
+              })}
+            />
+            {messageErrors.message && (
+              <p className="text-red-500 text-sm mt-1">{messageErrors.message.message}</p>
+            )}
+          </div>
+          <button type="submit" className="bg-green-400 text-white py-2 px-4 rounded-xl">
             Lưu
           </button>
-        </div>
+        </form>
       ) : (
-        <p className="text-gray-700">{msg.message}</p>
+        <p className="text-gray-700 whitespace-pre-wrap">{msg.message}</p>
       )}
 
       {/* Replies */}
@@ -127,35 +182,54 @@ export default function MessageCard({ msg, refresh }) {
                 
                 {username === r.username && (
                   <div className="flex space-x-2 text-xs">
-                    <button 
-                      onClick={() => handleEditReply(r.id)}
-                      className="text-blue-500"
-                    >
-                      {editingReplyId === r.id ? "Lưu" : "Chỉnh sửa"}
-                    </button>
                     {editingReplyId === r.id ? (
-                      <button onClick={() => setEditingReplyId(null)} className="text-gray-500">
-                        Trở lại
-                      </button>
+                      <>
+                        <button type="submit" form={`reply-edit-form-${r.id}`} className="text-blue-500">
+                          Lưu
+                        </button>
+                        <button onClick={cancelEdit} className="text-gray-500">
+                          Trở lại
+                        </button>
+                      </>
                     ) : (
-                      <button 
-                        onClick={() => handleDeleteReply(r.id)}
-                        className="text-red-400"
-                      >
-                        Xóa
-                      </button>
+                      <>
+                        <button onClick={() => handleEditReply(r)} className="text-blue-500">
+                          Chỉnh sửa
+                        </button>
+                        <button onClick={() => handleDeleteReply(r.id)} className="text-red-400">
+                          Xóa
+                        </button>
+                      </>
                     )}
                   </div>
                 )}
               </div>
 
               {editingReplyId === r.id ? (
-                <textarea
-                  className="w-full border border-blue-300 rounded-lg p-2 text-sm focus:outline-none resize-none"
-                  value={editReplyText}
-                  onChange={(e) => setEditReplyText(e.target.value)}
-                  rows="2"
-                />
+                <form 
+                  id={`reply-edit-form-${r.id}`}
+                  onSubmit={handleReplyEditSubmit(onReplyEdit)} 
+                  className="space-y-2"
+                >
+                  <textarea
+                    className="w-full border border-blue-300 rounded-lg p-2 text-sm focus:outline-none resize-none"
+                    rows="2"
+                    {...registerReplyEdit("replyEdit", {
+                      required: "Reply không được để trống",
+                      minLength: {
+                        value: 1,
+                        message: "Reply phải có ít nhất 1 ký tự"
+                      },
+                      maxLength: {
+                        value: 500,
+                        message: "Reply không được quá 500 ký tự"
+                      }
+                    })}
+                  />
+                  {replyEditErrors.replyEdit && (
+                    <p className="text-red-500 text-xs mt-1">{replyEditErrors.replyEdit.message}</p>
+                  )}
+                </form>
               ) : (
                 <p className="text-gray-600 text-sm mt-1">{r.message}</p>
               )}
@@ -175,22 +249,35 @@ export default function MessageCard({ msg, refresh }) {
       )}
 
       {/* Reply Form */}
-      <div className="mt-4 flex space-x-2">
-        <input
-          className="flex-1 border border-blue-300 rounded-xl p-3 text-sm focus:outline-none"
-          placeholder="Viết câu trả lời..."
-          value={replyText}
-          onChange={(e) => setReplyText(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleReply()}
-        />
+      <form onSubmit={handleReplySubmit(onReplySubmit)} className="mt-4 flex space-x-2">
+        <div className="flex-1">
+          <input
+            className="w-full border border-blue-300 rounded-xl p-3 text-sm focus:outline-none"
+            placeholder="Viết câu trả lời..."
+            {...registerReply("reply", {
+              required: "Reply không được để trống",
+              minLength: {
+                value: 1,
+                message: "Reply phải có ít nhất 1 ký tự"
+              },
+              maxLength: {
+                value: 500,
+                message: "Reply không được quá 500 ký tự"
+              }
+            })}
+          />
+          {replyErrors.reply && (
+            <p className="text-red-500 text-xs mt-1 ml-1">{replyErrors.reply.message}</p>
+          )}
+        </div>
         <button
-          onClick={handleReply}
-          disabled={!replyText.trim()}
+          type="submit"
+          disabled={isReplying}
           className="bg-blue-400 text-white px-4 rounded-xl text-sm disabled:bg-blue-200"
         >
-          Trả lời
+          {isReplying ? "..." : "Trả lời"}
         </button>
-      </div>
+      </form>
     </div>
   );
 }
