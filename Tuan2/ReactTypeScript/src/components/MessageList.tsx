@@ -1,6 +1,6 @@
 // src/components/MessageList.tsx
 import { useEffect, useState } from "react";
-import { getMessages, Message } from "../api/api";
+import { getMessages, type Message } from "../api/api";
 
 const MessageList = () => {
   const [messages, setMessages] = useState<Message[]>([]);
