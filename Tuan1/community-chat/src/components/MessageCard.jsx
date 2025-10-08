@@ -1,14 +1,57 @@
 import { useState } from "react";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateMessage, deleteMessage, createReply, deleteReply, updateReply } from "../services/api";
 import { useForm } from "react-hook-form";
 
-export default function MessageCard({ msg, refresh }) {
+export default function MessageCard({ msg }) {
   const username = localStorage.getItem("username");
   const [editMode, setEditMode] = useState(false);
   const [editingReplyId, setEditingReplyId] = useState(null);
   const [showAllReplies, setShowAllReplies] = useState(false);
+  const queryClient = useQueryClient();
 
-  // Form cho message edit
+  // useMutation cho update message
+  const { mutate: updateMessageMutation } = useMutation({
+    mutationFn: ({ id, data }) => updateMessage(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+    },
+  });
+
+  // useMutation cho delete message
+  const { mutate: deleteMessageMutation } = useMutation({
+    mutationFn: deleteMessage,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+    },
+  });
+
+  // useMutation cho create reply
+  const { mutate: createReplyMutation } = useMutation({
+    mutationFn: ({ messageId, reply }) => createReply(messageId, reply),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+    },
+  });
+
+  // useMutation cho update reply
+  const { mutate: updateReplyMutation } = useMutation({
+    mutationFn: ({ messageId, replyId, updatedReply }) => 
+      updateReply(messageId, replyId, updatedReply),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+    },
+  });
+
+  // useMutation cho delete reply
+  const { mutate: deleteReplyMutation } = useMutation({
+    mutationFn: ({ messageId, replyId }) => deleteReply(messageId, replyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+    },
+  });
+
+  // Forms
   const { 
     register: registerMessage, 
     handleSubmit: handleMessageSubmit, 
@@ -20,7 +63,6 @@ export default function MessageCard({ msg, refresh }) {
     }
   });
 
-  // Form cho reply
   const { 
     register: registerReply, 
     handleSubmit: handleReplySubmit, 
@@ -28,7 +70,6 @@ export default function MessageCard({ msg, refresh }) {
     reset: resetReply
   } = useForm();
 
-  // Form cho reply edit
   const { 
     register: registerReplyEdit, 
     handleSubmit: handleReplyEditSubmit, 
@@ -42,6 +83,7 @@ export default function MessageCard({ msg, refresh }) {
     ? msg.replies 
     : (msg.replies || []).slice(0, 2);
     
+  // Format time
   const formatTime = (timeString) => {
     return new Date(timeString).toLocaleTimeString('vi-VN', {
       hour: '2-digit',
@@ -49,37 +91,41 @@ export default function MessageCard({ msg, refresh }) {
     });
   };
 
+  // Message actions với mutations
   const onMessageEdit = async (data) => {
-    await updateMessage(msg.id, { ...msg, message: data.message });
+    updateMessageMutation({ id: msg.id, data: { ...msg, message: data.message } });
     setEditMode(false);
-    refresh();
   };
 
   const handleDelete = async () => {
     if (window.confirm("Xóa tin này??")) {
-      await deleteMessage(msg.id);
-      refresh();
+      deleteMessageMutation(msg.id);
     }
   };
 
+  // Reply actions với mutations
   const onReplySubmit = async (data) => {
-    await createReply(msg.id, { username, message: data.reply });
+    createReplyMutation({ 
+      messageId: msg.id, 
+      reply: { username, message: data.reply } 
+    });
     resetReply();
-    refresh();
   };
 
   const handleDeleteReply = async (replyId) => {
     if (window.confirm("Xóa câu trả lời này?")) {
-      await deleteReply(msg.id, replyId);
-      refresh();
+      deleteReplyMutation({ messageId: msg.id, replyId });
     }
   };
 
   const onReplyEdit = async (data) => {
-    await updateReply(msg.id, editingReplyId, { message: data.replyEdit });
+    updateReplyMutation({ 
+      messageId: msg.id, 
+      replyId: editingReplyId, 
+      updatedReply: { message: data.replyEdit } 
+    });
     setEditingReplyId(null);
     resetReplyEdit();
-    refresh();
   };
 
   const handleEditReply = (reply) => {

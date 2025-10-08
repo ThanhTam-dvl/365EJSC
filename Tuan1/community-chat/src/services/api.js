@@ -48,3 +48,36 @@ export const updateReply = async (messageId, replyId, updatedReply) => {
     replies: updatedReplies 
   });
 };
+
+// Task 3: Tanstack Query
+export const getStats = async () => {
+  // Giả lập API stats
+  const messagesRes = await getMessages();
+  const messages = messagesRes.data;
+  
+  return {
+    totalMessages: messages.length,
+    totalReplies: messages.reduce((acc, msg) => acc + (msg.replies?.length || 0), 0),
+    activeUsers: [...new Set(messages.map(msg => msg.username))].length,
+    latestMessage: messages[0]?.createdAt || 'No messages'
+  };
+};
+
+// NEW: Search API
+export const searchMessages = async (searchTerm) => {
+  const res = await getMessages();
+  const messages = res.data;
+  
+  return messages.filter(msg => 
+    msg.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    msg.username.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+};
+
+// NEW: User Messages API
+export const getUserMessages = async (username) => {
+  const res = await getMessages();
+  const messages = res.data;
+  
+  return messages.filter(msg => msg.username === username);
+};
