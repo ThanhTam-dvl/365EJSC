@@ -20,7 +20,7 @@ export default function Chat() {
     refetchInterval: 5000, // Auto refetch mỗi 5s
   });
 
-  // Sử dụng useMutation để tạo message - Optimistic updates
+  // Sử dụng useMutation để tạo message 
   const { 
     mutate: sendMessage, 
     isLoading: isSending,
