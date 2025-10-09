@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateMessage, deleteMessage, createReply, deleteReply, updateReply } from "../services/api";
 import { useForm } from "react-hook-form";
+import { useAuth } from "../stores/auth.store";
 
 export default function MessageCard({ msg }) {
   const username = localStorage.getItem("username");
@@ -9,6 +10,7 @@ export default function MessageCard({ msg }) {
   const [editingReplyId, setEditingReplyId] = useState(null);
   const [showAllReplies, setShowAllReplies] = useState(false);
   const queryClient = useQueryClient();
+  const { currentUser } = useAuth();
 
   // useMutation cho update message
   const { mutate: updateMessageMutation } = useMutation({
@@ -147,14 +149,28 @@ export default function MessageCard({ msg }) {
     setEditMode(false);
   };
 
+  const messageAvatar = msg.avatar || (msg.username === currentUser?.username ? currentUser.avatar : null);
+  const getReplyAvatar = (r) => r.avatar || (r.username === currentUser?.username ? currentUser.avatar : null);
+
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-6 border border-blue-200">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-blue-200 dark:border-gray-700">
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
         <div>
           <div className="flex items-center space-x-2">
-            <strong className="text-blue-800">{msg.username}</strong>
-            <span className="text-gray-500 text-sm ml-10">
+            {messageAvatar ? (
+              <img
+                src={messageAvatar}
+                alt={msg.username}
+                className="w-8 h-8 rounded-full object-cover bg-gray-200"
+              />
+            ) : (
+              <span className="w-8 h-8 rounded-full bg-blue-400 text-white flex items-center justify-center font-bold">
+                {msg.username?.charAt(0).toUpperCase()}
+              </span>
+            )}
+            <strong className="text-blue-800 dark:text-blue-200">{msg.username}</strong>
+            <span className="text-gray-500 dark:text-gray-400 text-sm ml-10">
               {formatTime(msg.createdAt)}
             </span>
           </div>
@@ -163,15 +179,15 @@ export default function MessageCard({ msg }) {
         {username === msg.username && (
           <div className="flex space-x-2">
             {editMode ? (
-              <button onClick={cancelEditMessage} className="text-gray-500 text-sm">
+              <button onClick={cancelEditMessage} className="text-gray-500 dark:text-gray-300 text-sm">
                 Trở lại
               </button>
             ) : (
               <>
-                <button onClick={startEditMessage} className="text-blue-500 text-sm">
+                <button onClick={startEditMessage} className="text-blue-500 dark:text-blue-300 text-sm">
                   Chỉnh sửa
                 </button>
-                <button onClick={handleDelete} className="text-red-400 text-sm">
+                <button onClick={handleDelete} className="text-red-400 dark:text-red-300 text-sm">
                   Xóa
                 </button>
               </>
@@ -185,7 +201,7 @@ export default function MessageCard({ msg }) {
         <form onSubmit={handleMessageSubmit(onMessageEdit)} className="space-y-2">
           <div>
             <textarea
-              className="w-full border border-blue-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+              className="w-full border border-blue-300 dark:border-gray-600 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-900 resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               rows="3"
               {...registerMessage("message", {
                 required: "Tin nhắn không được để trống",
@@ -200,27 +216,38 @@ export default function MessageCard({ msg }) {
               })}
             />
             {messageErrors.message && (
-              <p className="text-red-500 text-sm mt-1">{messageErrors.message.message}</p>
+              <p className="text-red-500 dark:text-red-400 text-sm mt-1">{messageErrors.message.message}</p>
             )}
           </div>
-          <button type="submit" className="bg-green-400 text-white py-2 px-4 rounded-xl">
+          <button type="submit" className="bg-green-400 dark:bg-green-600 text-white py-2 px-4 rounded-xl">
             Lưu
           </button>
         </form>
       ) : (
-        <p className="text-gray-700 whitespace-pre-wrap">{msg.message}</p>
+        <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{msg.message}</p>
       )}
 
       {/* Replies */}
       {(msg.replies || []).length > 0 && (
-        <div className="ml-4 mt-4 space-y-3 border-l-2 border-blue-200 pl-4">
+        <div className="ml-4 mt-4 space-y-3 border-l-2 border-blue-200 dark:border-gray-600 pl-4">
           {displayedReplies.map((r) => (
-            <div key={r.id} className="bg-blue-50 rounded-xl p-3">
+            <div key={r.id} className="bg-blue-50 dark:bg-gray-700 rounded-xl p-3">
               <div className="flex justify-between items-start mb-1">
                 <div>
                   <div className="flex items-center space-x-2">
-                    <strong className="text-blue-700 text-sm">{r.username}</strong>
-                    <span className="text-gray-500 text-xs ml-8">
+                    {getReplyAvatar(r) ? (
+                      <img
+                        src={getReplyAvatar(r)}
+                        alt={r.username}
+                        className="w-7 h-7 rounded-full object-cover bg-gray-200"
+                      />
+                    ) : (
+                      <span className="w-7 h-7 rounded-full bg-blue-400 text-white flex items-center justify-center font-bold text-sm">
+                        {r.username?.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                    <strong className="text-blue-700 dark:text-blue-200 text-sm">{r.username}</strong>
+                    <span className="text-gray-500 dark:text-gray-400 text-xs ml-8">
                       {formatTime(r.createdAt)}
                     </span>
                   </div>
@@ -230,19 +257,19 @@ export default function MessageCard({ msg }) {
                   <div className="flex space-x-2 text-xs">
                     {editingReplyId === r.id ? (
                       <>
-                        <button type="submit" form={`reply-edit-form-${r.id}`} className="text-blue-500">
+                        <button type="submit" form={`reply-edit-form-${r.id}`} className="text-blue-500 dark:text-blue-300">
                           Lưu
                         </button>
-                        <button onClick={cancelEdit} className="text-gray-500">
+                        <button onClick={cancelEdit} className="text-gray-500 dark:text-gray-300">
                           Trở lại
                         </button>
                       </>
                     ) : (
                       <>
-                        <button onClick={() => handleEditReply(r)} className="text-blue-500">
+                        <button onClick={() => handleEditReply(r)} className="text-blue-500 dark:text-blue-300">
                           Chỉnh sửa
                         </button>
-                        <button onClick={() => handleDeleteReply(r.id)} className="text-red-400">
+                        <button onClick={() => handleDeleteReply(r.id)} className="text-red-400 dark:text-red-300">
                           Xóa
                         </button>
                       </>
@@ -258,7 +285,7 @@ export default function MessageCard({ msg }) {
                   className="space-y-2"
                 >
                   <textarea
-                    className="w-full border border-blue-300 rounded-lg p-2 text-sm focus:outline-none resize-none"
+                    className="w-full border border-blue-300 dark:border-gray-600 rounded-lg p-2 text-sm focus:outline-none resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                     rows="2"
                     {...registerReplyEdit("replyEdit", {
                       required: "Reply không được để trống",
@@ -273,11 +300,11 @@ export default function MessageCard({ msg }) {
                     })}
                   />
                   {replyEditErrors.replyEdit && (
-                    <p className="text-red-500 text-xs mt-1">{replyEditErrors.replyEdit.message}</p>
+                    <p className="text-red-500 dark:text-red-400 text-xs mt-1">{replyEditErrors.replyEdit.message}</p>
                   )}
                 </form>
               ) : (
-                <p className="text-gray-600 text-sm mt-1">{r.message}</p>
+                <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">{r.message}</p>
               )}
             </div>
           ))}
@@ -286,7 +313,7 @@ export default function MessageCard({ msg }) {
           {(msg.replies || []).length > 2 && (
             <button
               onClick={() => setShowAllReplies(!showAllReplies)}
-              className="text-blue-500 text-sm hover:text-blue-700"
+              className="text-blue-500 dark:text-blue-300 text-sm hover:text-blue-700 dark:hover:text-blue-200"
             >
               {showAllReplies ? 'Ẩn bớt' : `Xem thêm ${(msg.replies || []).length - 2} reply`}
             </button>
@@ -298,7 +325,7 @@ export default function MessageCard({ msg }) {
       <form onSubmit={handleReplySubmit(onReplySubmit)} className="mt-4 flex space-x-2">
         <div className="flex-1">
           <input
-            className="w-full border border-blue-300 rounded-xl p-3 text-sm focus:outline-none"
+            className="w-full border border-blue-300 dark:border-gray-600 rounded-xl p-3 text-sm focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             placeholder="Viết câu trả lời..."
             {...registerReply("reply", {
               required: "Reply không được để trống",
@@ -313,13 +340,13 @@ export default function MessageCard({ msg }) {
             })}
           />
           {replyErrors.reply && (
-            <p className="text-red-500 text-xs mt-1 ml-1">{replyErrors.reply.message}</p>
+            <p className="text-red-500 dark:text-red-400 text-xs mt-1 ml-1">{replyErrors.reply.message}</p>
           )}
         </div>
         <button
           type="submit"
           disabled={isReplying}
-          className="bg-blue-400 text-white px-4 rounded-xl text-sm disabled:bg-blue-200"
+          className="bg-blue-400 dark:bg-blue-600 text-white px-4 rounded-xl text-sm disabled:bg-blue-200 dark:disabled:bg-blue-900"
         >
           {isReplying ? "..." : "Trả lời"}
         </button>

@@ -1,18 +1,21 @@
+// About.jsx (updated with dark mode)
 export default function About() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-4 mt-10">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 dark:from-gray-800 dark:to-gray-900 p-4 mt-14 transition-colors duration-200">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-sm p-5 border border-blue-200">
-          <h2 className="text-3xl font-bold text-blue-800 mb-6 text-center">About Community Chat</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-5 border border-blue-200 dark:border-gray-700">
+          <h2 className="text-3xl font-bold text-blue-800 dark:text-blue-200 mb-6 text-center">
+            About Community Chat
+          </h2>
           
-          <div className="space-y-6 text-gray-700 leading-relaxed">
+          <div className="space-y-6 text-gray-700 dark:text-gray-300 leading-relaxed">
             <p className="text-lg">
               Community Chat là ứng dụng web mini xây dựng bằng React + Vite + TailwindCSS. 
               Người dùng có thể trò chuyện, trả lời, chỉnh sửa, xóa tin nhắn và giả lập real-time với MockAPI.
             </p>
             
-            <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
-              <h3 className="font-bold text-blue-800 mb-3 text-xl text-center">Tính năng chính</h3>
+            <div className="bg-blue-50 dark:bg-gray-700 rounded-xl p-4 border border-blue-100 dark:border-gray-600">
+              <h3 className="font-bold text-blue-800 dark:text-blue-200 mb-3 text-xl text-center">Tính năng chính</h3>
               <ul className="space-y-2 list-disc list-inside">
                 <li>Trò chuyện cộng đồng thời gian thực</li>
                 <li>Trả lời tin nhắn (Reply)</li>
@@ -24,8 +27,8 @@ export default function About() {
               </ul>
             </div>
 
-            <div className="bg-green-50 rounded-xl p-4 border border-green-100">
-              <h3 className="font-bold text-green-800 mb-3 text-xl text-center">Công nghệ sử dụng</h3>
+            <div className="bg-green-50 dark:bg-gray-700 rounded-xl p-4 border border-green-100 dark:border-gray-600">
+              <h3 className="font-bold text-green-800 dark:text-green-200 mb-3 text-xl text-center">Công nghệ sử dụng</h3>
               <ul className="space-y-2 list-disc list-inside">
                 <li>React.js với Hooks</li>
                 <li>TailwindCSS cho styling</li>
