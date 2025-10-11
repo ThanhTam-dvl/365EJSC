@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../stores/auth.store';
 import { useNotifications } from '../stores/notification.store';
 
@@ -8,7 +8,7 @@ export default function Profile() {
   const { success, error: notifyError } = useNotifications();
   const [activeTab, setActiveTab] = useState('profile'); 
   const [avatarPreview, setAvatarPreview] = useState(currentUser?.avatar || '');
-  const [avatarMethod, setAvatarMethod] = useState('upload'); // 'upload' or 'url'
+  const [avatarMethod, setAvatarMethod] = useState('upload'); // 'upload' hoặc 'url'
 
   const profileForm = useForm({
     defaultValues: {
@@ -48,6 +48,13 @@ export default function Profile() {
         });
 
         if (result.success) {
+          // CẬP NHẬT avatarPreview sau khi thành công
+          if (finalAvatarUrl) {
+            setAvatarPreview(finalAvatarUrl);
+          } else if (finalAvatar) {
+            setAvatarPreview(finalAvatar);
+          }
+
           success('Tài khoản đã được bảo vệ thành công!');
           setActiveTab('profile');
         } else {
@@ -62,6 +69,19 @@ export default function Profile() {
         });
 
         if (result.success) {
+          if (finalAvatarUrl) {
+            setAvatarPreview(finalAvatarUrl);
+          } else if (finalAvatar) {
+            setAvatarPreview(finalAvatar);
+          } else {
+            // Nếu không có avatar mới, dùng avatar từ currentUser đã update
+            setAvatarPreview(result.user?.avatarUrl || result.user?.avatar || '');
+          }
+          
+          // Reset form values để hiển thị đúng
+          profileForm.setValue('avatar', finalAvatar);
+          profileForm.setValue('avatarUrl', finalAvatarUrl);
+
           success('Thông tin đã được cập nhật!');
           // Update localStorage username if changed
           if (data.displayName !== localStorage.getItem('username')) {
@@ -147,6 +167,27 @@ export default function Profile() {
     setAvatarPreview('');
     profileForm.setValue('avatar', '');
   };
+
+  useEffect(() => {
+    if (currentUser) {
+      // Ưu tiên hiển thị avatarUrl trước, sau đó mới đến avatar
+      const userAvatar = currentUser.avatarUrl || currentUser.avatar;
+      if (userAvatar) {
+        setAvatarPreview(userAvatar);
+      }
+      
+      // Đồng bộ form values
+      profileForm.setValue('avatar', currentUser.avatar || '');
+      profileForm.setValue('avatarUrl', currentUser.avatarUrl || '');
+      
+      // Xác định method hiện tại dựa trên dữ liệu
+      if (currentUser.avatarUrl) {
+        setAvatarMethod('url');
+      } else if (currentUser.avatar) {
+        setAvatarMethod('upload');
+      }
+    }
+  }, [currentUser, profileForm]);
 
   if (!currentUser && !isGuestMode) {
     return (

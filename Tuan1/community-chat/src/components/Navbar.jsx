@@ -12,6 +12,18 @@ export default function Navbar() {
 
   const username = currentUser?.username || localStorage.getItem("username") || "User";
 
+  // Hàm lấy avatar - ƯU TIÊN avatarUrl
+  const getNavbarAvatar = () => {
+    if (currentUser) {
+      // Ưu tiên avatarUrl trước
+      if (currentUser.avatarUrl) return currentUser.avatarUrl;
+      if (currentUser.avatar) return currentUser.avatar;
+    }
+    return '';
+  };
+
+  const navbarAvatar = getNavbarAvatar();
+
   const handleLogout = () => {
     logout();
     setIsProfileMenuOpen(false);
@@ -66,14 +78,12 @@ export default function Navbar() {
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                 className={
                   "flex items-center justify-center w-9 h-9 rounded-full font-semibold focus:outline-none overflow-hidden " +
-                  (currentUser?.avatar
-                    ? ""
-                    : "bg-blue-500 hover:bg-blue-600 text-white")
+                  (navbarAvatar ? "" : "bg-blue-500 hover:bg-blue-600 text-white")
                 }
               >
-                {currentUser?.avatar ? (
+                {navbarAvatar ? (
                   <img
-                    src={currentUser.avatar}
+                    src={navbarAvatar}
                     alt="Avatar"
                     className="w-9 h-9 rounded-full object-cover"
                   />
@@ -125,14 +135,12 @@ export default function Navbar() {
               onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
               className={
                 "flex items-center justify-center w-9 h-9 rounded-full font-semibold focus:outline-none overflow-hidden " +
-                (currentUser?.avatar
-                  ? ""
-                  : "bg-blue-500 hover:bg-blue-600 text-white")
+                (navbarAvatar ? "" : "bg-blue-500 hover:bg-blue-600 text-white")
               }
             >
-              {currentUser?.avatar ? (
+              {navbarAvatar ? (
                 <img
-                  src={currentUser.avatar}
+                  src={navbarAvatar}
                   alt="Avatar"
                   className="w-9 h-9 rounded-full object-cover"
                 />
