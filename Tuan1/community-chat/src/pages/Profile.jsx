@@ -1,4 +1,3 @@
-// pages/Profile.jsx
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
 import { useAuth } from '../stores/auth.store';
@@ -7,14 +6,16 @@ import { useNotifications } from '../stores/notification.store';
 export default function Profile() {
   const { currentUser, isAuthenticated, updateProfile, convertToAuthenticated, changePassword, isGuestMode } = useAuth();
   const { success, error: notifyError } = useNotifications();
-  const [activeTab, setActiveTab] = useState('profile'); // 'profile' or 'password'
+  const [activeTab, setActiveTab] = useState('profile'); 
   const [avatarPreview, setAvatarPreview] = useState(currentUser?.avatar || '');
+  const [avatarMethod, setAvatarMethod] = useState('upload'); // 'upload' or 'url'
 
   const profileForm = useForm({
     defaultValues: {
       loginUsername: currentUser?.loginUsername || '',
       displayName: currentUser?.username || localStorage.getItem('username') || '',
       avatar: currentUser?.avatar || '',
+      avatarUrl: ''
     }
   });
 
@@ -22,11 +23,28 @@ export default function Profile() {
 
   const onProfileSubmit = async (data) => {
     try {
+      let finalAvatar = '';
+      let finalAvatarUrl = '';
+
+      // Xử lý avatar theo method
+      if (avatarMethod === 'upload' && data.avatar) {
+        finalAvatar = data.avatar;
+        finalAvatarUrl = '';
+      } else if (avatarMethod === 'url' && data.avatarUrl) {
+        if (!isValidUrl(data.avatarUrl)) {
+          notifyError('URL avatar không hợp lệ');
+          return;
+        }
+        finalAvatarUrl = data.avatarUrl;
+        finalAvatar = '';
+      }      
+
       if (isGuestMode && !isAuthenticated) {
         const result = await convertToAuthenticated({
           loginUsername: data.loginUsername,
           password: data.password,
-          avatar: data.avatar,
+          avatar: finalAvatar,
+          avatarUrl: finalAvatarUrl,
         });
 
         if (result.success) {
@@ -39,7 +57,8 @@ export default function Profile() {
         const result = await updateProfile({
           loginUsername: data.loginUsername,
           username: data.displayName,
-          avatar: data.avatar,
+          avatar: finalAvatar,
+          avatarUrl: finalAvatarUrl,
         });
 
         if (result.success) {
@@ -73,6 +92,15 @@ export default function Profile() {
     }
   };
 
+  const isValidUrl = (url) => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };  
+
   const handleAvatarChange = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -82,8 +110,9 @@ export default function Profile() {
         return;
       }
       
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit
-        notifyError('Kích thước ảnh không được vượt quá 2MB');
+      // GIỚI HẠN 100KB để tránh lỗi MockAPI
+      if (file.size > 100 * 1024) {
+        notifyError('Kích thước ảnh không được vượt quá 100KB. Vui lòng chọn ảnh nhỏ hơn hoặc dùng URL.');
         return;
       }
 
@@ -95,6 +124,23 @@ export default function Profile() {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  // Xử lý URL avatar
+  const handleAvatarUrlChange = (url) => {
+    if (url) {
+      setAvatarPreview(url);
+      profileForm.setValue('avatarUrl', url);
+    }
+  };  
+
+  // Chuyển đổi method
+  const switchAvatarMethod = (method) => {
+    setAvatarMethod(method);
+    // Reset cả hai field khi chuyển method
+    profileForm.setValue('avatar', '');
+    profileForm.setValue('avatarUrl', '');
+    setAvatarPreview('');
   };
 
   const removeAvatar = () => {
@@ -185,7 +231,35 @@ export default function Profile() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Avatar
                 </label>
-                <div className="flex items-center space-x-4">
+
+                {/* Avatar Method Selector */}
+                <div className="flex space-x-2 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => switchAvatarMethod('upload')}
+                    className={`flex-1 py-2 text-sm font-medium rounded-lg ${
+                      avatarMethod === 'upload'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    Upload Ảnh
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => switchAvatarMethod('url')}
+                    className={`flex-1 py-2 text-sm font-medium rounded-lg ${
+                      avatarMethod === 'url'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    Nhập URL
+                  </button>
+                </div>
+
+                {/* Avatar Preview */}
+                <div className="flex items-center space-x-4 mb-4">
                   <div className="flex-shrink-0">
                     {avatarPreview ? (
                       <img 
@@ -201,25 +275,44 @@ export default function Profile() {
                       </div>
                     )}
                   </div>
-                  <div className="flex-1">
-                    <label className="block">
-                      <span className="sr-only">Chọn avatar</span>
+                  
+                  {/* Upload Method */}
+                  {avatarMethod === 'upload' && (
+                    <div className="flex-1">
+                      <label className="block">
+                        <span className="sr-only">Chọn avatar</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarChange}
+                          className="block w-full text-sm text-gray-500 dark:text-gray-400
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-full file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900 dark:file:text-blue-300
+                            hover:file:bg-blue-100 dark:hover:file:bg-blue-800"
+                        />
+                      </label>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        PNG, JPG, GIF tối đa 100KB
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* URL Method */}
+                  {avatarMethod === 'url' && (
+                    <div className="flex-1">
                       <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                        className="block w-full text-sm text-gray-500 dark:text-gray-400
-                          file:mr-4 file:py-2 file:px-4
-                          file:rounded-full file:border-0
-                          file:text-sm file:font-semibold
-                          file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900 dark:file:text-blue-300
-                          hover:file:bg-blue-100 dark:hover:file:bg-blue-800"
+                        type="url"
+                        placeholder="https://example.com/avatar.jpg"
+                        className="w-full border border-blue-300 dark:border-gray-600 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        onChange={(e) => handleAvatarUrlChange(e.target.value)}
                       />
-                    </label>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      PNG, JPG, GIF tối đa 2MB
-                    </p>
-                  </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Nhập URL ảnh từ internet
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -300,6 +393,7 @@ export default function Profile() {
 
               {/* Hidden avatar field */}
               <input type="hidden" {...profileForm.register("avatar")} />
+              <input type="hidden" {...profileForm.register("avatarUrl")} />
 
               <button
                 type="submit"

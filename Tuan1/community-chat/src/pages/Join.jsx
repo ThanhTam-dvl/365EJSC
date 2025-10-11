@@ -1,9 +1,9 @@
-// Join.jsx (UPDATED)
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../stores/auth.store';
 import { useNotifications } from '../stores/notification.store';
+import { checkUsernameExists } from '../services/api';
 
 export default function Join() {
   const { 
@@ -24,12 +24,27 @@ export default function Join() {
     password: 'admin123'
   };
 
-  // Guest join submit
-  const onGuestJoin = (data) => {
+  // Trong component Join, sửa onGuestJoin:
+const onGuestJoin = async (data) => {
+  try {
+    // Kiểm tra username đã được bảo vệ chưa
+    const usernameExists = await checkUsernameExists(data.username);
+    if (usernameExists) {
+      notifyError('Tên này đã được bảo vệ. Vui lòng chọn tên khác hoặc đăng nhập.');
+      return;
+    }
+    
     localStorage.setItem("username", data.username);
     success(`Chào mừng ${data.username} đến với TaZi Chat!`);
     navigate("/chat");
-  };
+  } catch (error) {
+    console.error('Guest join error:', error);
+    // Nếu có lỗi kiểm tra, vẫn cho phép join (fallback)
+    localStorage.setItem("username", data.username);
+    success(`Chào mừng ${data.username} đến với TaZi Chat!`);
+    navigate("/chat");
+  }
+};
 
   // User login submit
   const onUserLogin = async (data) => {

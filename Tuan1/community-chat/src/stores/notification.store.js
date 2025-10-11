@@ -1,4 +1,3 @@
-// stores/notification.store.js
 import { create } from 'zustand';
 
 export const useNotificationStore = create((set, get) => ({
@@ -53,7 +52,6 @@ export const useNotificationStore = create((set, get) => ({
     get().addNotification({ type: 'info', title, message }),
 }));
 
-// Hook tiện ích
 export const useNotifications = () => {
   const {
     notifications,

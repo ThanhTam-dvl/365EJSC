@@ -134,7 +134,7 @@ export const useAuthStore = create(
         }
       },
       
-      // Check if user is in guest mode (only has username in localStorage)
+      // Check if user is in guest mode 
       isGuestMode: () => {
         const username = localStorage.getItem('username');
         const { currentUser, isAuthenticated } = get();
@@ -158,6 +158,7 @@ export const useAuthStore = create(
               loginUsername: userData.loginUsername,
               password: userData.password,
               avatar: userData.avatar || '',
+              avatarUrl: userData.avatarUrl || '',
             };
             
             const response = await createUser(newUserData);

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { updateMessage, deleteMessage, createReply, deleteReply, updateReply } from "../services/api";
+import { updateMessage, deleteMessage, createReply, deleteReply, updateReply, getUsers } from "../services/api";
 import { useForm } from "react-hook-form";
 import { useAuth } from "../stores/auth.store";
 
@@ -9,8 +9,62 @@ export default function MessageCard({ msg }) {
   const [editMode, setEditMode] = useState(false);
   const [editingReplyId, setEditingReplyId] = useState(null);
   const [showAllReplies, setShowAllReplies] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
   const queryClient = useQueryClient();
   const { currentUser } = useAuth();
+
+  // Fetch all users để lấy avatar theo username
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await getUsers();
+        setAllUsers(res.data);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  // Hàm lấy avatar cho message
+  const getMessageAvatar = (message) => {
+    // Ưu tiên 1: Avatar URL từ chính message (nếu có)
+    if (message.avatarUrl) return message.avatarUrl;
+    
+    // Ưu tiên 2: Avatar base64 từ chính message
+    if (message.avatar) return message.avatar;
+    
+    // Ưu tiên 3: Tìm trong danh sách users theo username
+    const user = allUsers.find(u => u.username === message.username);
+    if (user?.avatarUrl) return user.avatarUrl; // Ưu tiên avatarUrl của user
+    if (user?.avatar) return user.avatar; // Sau đó mới đến avatar base64
+    
+    // Ưu tiên 4: Avatar từ currentUser nếu cùng username
+    if (message.username === currentUser?.username) {
+      if (currentUser?.avatarUrl) return currentUser.avatarUrl;
+      if (currentUser?.avatar) return currentUser.avatar;
+    }
+    
+    return '';
+  };
+
+
+  // Hàm lấy avatar cho reply
+  const getReplyAvatar = (reply) => {
+    if (reply.avatarUrl) return reply.avatarUrl;
+    if (reply.avatar) return reply.avatar;
+    
+    const user = allUsers.find(u => u.username === reply.username);
+    if (user?.avatarUrl) return user.avatarUrl;
+    if (user?.avatar) return user.avatar;
+    
+    if (reply.username === currentUser?.username) {
+      if (currentUser?.avatarUrl) return currentUser.avatarUrl;
+      if (currentUser?.avatar) return currentUser.avatar;
+    }
+    
+    return '';
+  };
 
   // useMutation cho update message
   const { mutate: updateMessageMutation } = useMutation({
@@ -109,7 +163,11 @@ export default function MessageCard({ msg }) {
   const onReplySubmit = async (data) => {
     createReplyMutation({ 
       messageId: msg.id, 
-      reply: { username, message: data.reply } 
+      reply: { 
+        username: username, 
+        message: data.reply,
+        avatar: currentUser?.avatar || '' // Thêm avatar vào reply
+      } 
     });
     resetReply();
   };
@@ -149,18 +207,15 @@ export default function MessageCard({ msg }) {
     setEditMode(false);
   };
 
-  const messageAvatar = msg.avatar || (msg.username === currentUser?.username ? currentUser.avatar : null);
-  const getReplyAvatar = (r) => r.avatar || (r.username === currentUser?.username ? currentUser.avatar : null);
-
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-blue-200 dark:border-gray-700">
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
         <div>
           <div className="flex items-center space-x-2">
-            {messageAvatar ? (
+            {getMessageAvatar(msg) ? (
               <img
-                src={messageAvatar}
+                src={getMessageAvatar(msg)}
                 alt={msg.username}
                 className="w-8 h-8 rounded-full object-cover bg-gray-200"
               />

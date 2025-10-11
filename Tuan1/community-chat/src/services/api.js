@@ -57,19 +57,23 @@ export const authenticateUser = async (loginUsername, password) => {
 // Check if username already exists
 export const checkUsernameExists = async (username) => {
   try {
-    const user = await findUserByUsername(username);
-    return !!user;
+    const res = await getUsers();
+    const users = res.data;
+    return users.some(user => user.username === username);
   } catch (error) {
-    return false;
+    console.error('Error checking username:', error);
+    return false; // Trả về false khi có lỗi thay vì throw error
   }
 };
 
 // Check if loginUsername already exists
 export const checkLoginUsernameExists = async (loginUsername) => {
   try {
-    const user = await findUserByLogin(loginUsername);
-    return !!user;
+    const res = await getUsers();
+    const users = res.data;
+    return users.some(user => user.loginUsername === loginUsername);
   } catch (error) {
+    console.error('Error checking login username:', error);
     return false;
   }
 };
@@ -87,9 +91,12 @@ export const updateUserPassword = async (userId, newPassword) => {
 // ==================== MESSAGES API ====================
 
 export const getMessages = () => api.get("/messages?sortBy=createdAt&order=desc");
-export const createMessage = (data) => api.post("/messages", {
-  ...data,
-  createdAt: new Date().toISOString()
+export const createMessage = (messageData) => api.post("/messages", {
+  ...messageData,
+  createdAt: new Date().toISOString(),
+  avatar: messageData.avatar || '',
+  avatarUrl: messageData.avatarUrl || '', 
+  replies: messageData.replies || []
 });
 export const updateMessage = (id, data) => api.put(`/messages/${id}`, data);
 export const deleteMessage = (id) => api.delete(`/messages/${id}`);
@@ -99,8 +106,10 @@ export const createReply = async (messageId, reply) => {
   const newReply = { 
     ...reply,
     id: Date.now(), 
-    createdAt: new Date().toISOString()
-  };
+    createdAt: new Date().toISOString(),
+    avatar: reply.avatar || '',
+    avatarUrl: reply.avatarUrl || '',
+    };
   const currentReplies = Array.isArray(currentMessage.replies) ? currentMessage.replies : [];
   const updatedReplies = [...currentReplies, newReply];
   return api.put(`/messages/${messageId}`, { 

@@ -1,14 +1,15 @@
-// Chat.jsx (UPDATED với dark mode)
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMessages, createMessage } from "../services/api";
 import MessageCard from "../components/MessageCard";
 import { useForm } from "react-hook-form";
 import { useNotifications } from '../stores/notification.store';
+import { useAuth } from '../stores/auth.store';
 
 export default function Chat() {
   const username = localStorage.getItem("username");
   const queryClient = useQueryClient();
   const { success, error: notifyError } = useNotifications();
+  const { currentUser } = useAuth();
 
   // Sử dụng useQuery để fetch messages - Auto refetch mỗi 5s
   const { 
@@ -75,7 +76,13 @@ export default function Chat() {
   const messageText = watch("message", "");
 
   const onSubmit = async (data) => {
-    sendMessage({ username, message: data.message, replies: [] });
+    sendMessage({
+      username, 
+      message: data.message, 
+      replies: [],
+      avatar: currentUser?.avatar || '' ,
+      avatarUrl: currentUser?.avatarUrl || '',
+    });
     reset();
   };
 

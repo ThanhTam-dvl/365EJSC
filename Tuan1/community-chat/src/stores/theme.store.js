@@ -1,4 +1,3 @@
-// stores/theme.store.js
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -16,12 +15,11 @@ export const useThemeStore = create(
       themeClass: () => get().isDarkMode ? 'dark' : 'light',
     }),
     {
-      name: 'theme-storage', // Tên key trong localStorage
+      name: 'theme-storage', 
     }
   )
 );
 
-// Hook tiện ích để sử dụng theme
 export const useTheme = () => {
   const { isDarkMode, toggleTheme, setDarkMode, themeClass } = useThemeStore();
   
