@@ -414,7 +414,7 @@ const onGuestJoin = async (data) => {
         {mode === 'guest' && isGuest && (
           <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900 rounded-lg border border-yellow-200 dark:border-yellow-700">
             <p className="text-sm text-yellow-700 dark:text-yellow-300 text-center">
-              💡 Bạn đang sử dụng guest mode. Đăng ký tài khoản để bảo vệ danh tính!
+              Bạn đang sử dụng guest mode. Đăng ký tài khoản để bảo vệ danh tính!
             </p>
           </div>
         )}
